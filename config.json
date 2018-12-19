@@ -1,0 +1,45 @@
+{
+    "screen_name_1":
+{
+    "auth":
+    {
+        "screen_name": "screen_name_1",
+        "CONSUMER_KEY": "",
+        "CONSUMER_SECRET": "",
+        "ACCESS_TOKEN": "",
+        "ACCESS_SECRET": ""
+    },
+    "lang": "en",
+    "fav_results_search": 10,
+    "follow_results_search": 15,
+    "unfollow_after_hours": 96,
+    "keywords":["keyword_1","keyword_2","keyword_3"],
+    "blacklisted_account_ids": [],
+    "whitelist_screen_name_or_id": "id",
+    "whitelisted_accounts": [],
+    "whitelisted_account_ids": [],
+    "messages":["Thanks for following us!"]
+},
+
+    "screen_name_2":
+{
+    "auth":
+    {
+        "screen_name": "screen_name_2",
+        "CONSUMER_KEY": "",
+        "CONSUMER_SECRET": "",
+        "ACCESS_TOKEN": "",
+        "ACCESS_SECRET": ""
+    },
+    "lang": "en",
+    "fav_results_search": 10,
+    "follow_results_search": 10,
+    "unfollow_after_hours": 48,
+    "keywords":["keyword_1","keyword_2","keyword_3"],
+    "blacklisted_account_ids": [],
+    "whitelist_screen_name_or_id": "id",
+    "whitelisted_accounts": ["jwpwhite"],
+    "whitelisted_account_ids": [246222347],
+    "messages":["Thanks for following me!"]
+}
+}
