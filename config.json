@@ -18,7 +18,9 @@
     "whitelist_screen_name_or_id": "id",
     "whitelisted_accounts": [],
     "whitelisted_account_ids": [],
-    "messages":["Thanks for following us!"]
+    "greetings": ["Hey", "Hi", "Hello"],
+    "messages":["Thanks for following us!"],
+    "signoff": ["Cheers\nTeam TwitBot"]
 },
 
     "screen_name_2":
@@ -40,6 +42,8 @@
     "whitelist_screen_name_or_id": "id",
     "whitelisted_accounts": ["jwpwhite"],
     "whitelisted_account_ids": [246222347],
-    "messages":["Thanks for following me!"]
+    "greetings": ["Hey", "Hi", "Hello"],
+    "messages":["Thanks for following me!"],
+    "signoff": ["Cheers\nTeam TwitBot"]
 }
 }

@@ -520,55 +520,66 @@ def unfollow_after(followers, following, total_followed, whitelisted_users, blac
 def fav_off_keyword(followers, following, total_followed, whitelisted_users, blacklisted_users, log_location, config_data, screen_name, unfollow_after_hours, api, twitterapi):
 
     for i in config_data[screen_name]["keywords"]:
-        # find the tweet id of the last liked tweet for a keyword/hashtag
-        liked_tweets_df = pd.DataFrame(pd.read_csv('{}liked_tweets.csv'.format(log_location)))
-        try:
-            max_tweet_id_for_hashtag = max(liked_tweets_df[liked_tweets_df['searched_hashtag'] == i]['tweet_id'].tolist())
-        except:
-        	max_tweet_id_for_hashtag = None
         # gets search result
         search_results = api.search(
             q=i,
             count=config_data[screen_name]["fav_results_search"],
-            lang=config_data[screen_name]["lang"],
-            since_id=max_tweet_id_for_hashtag)
+            lang=config_data[screen_name]["lang"])
         # extract tweet ids and user data from tweets
-        searched_tweet_ids = [tweet.id for tweet in search_results]
         searched_tweet_user_data = [tweet._json for tweet in search_results]
+
+        # extract original tweet id's. These are the original post's tweet id's where a post has been retweeted. Prevents error when you try to like a retweet where the tweet has already been liked.
+        searched_tweet_ids = []
+
+        for tweet in searched_tweet_user_data:
+            try:
+                searched_tweet_ids += [[tweet['id'],tweet['retweeted_status']['id']]]
+            except:
+                searched_tweet_ids += [[tweet['id'],' ']]
 
         # import users followed previously by TwitBot
         liked_tweets_df = pd.DataFrame(pd.read_csv('{}liked_tweets.csv'.format(log_location)))
         liked_tweet_ids_list = liked_tweets_df['tweet_id'].tolist()
-        new_tweet_ids = list(set(searched_tweet_ids) - set(liked_tweet_ids_list))
+        liked_original_tweet_ids_list = liked_tweets_df['original_tweet_id'].tolist()
+        liked_tweet_retweet_ids_list = list(set(liked_tweet_ids_list + liked_original_tweet_ids_list))
 
-        searched_hashtag = i
         liked_tweets_list = []
 
         # only follows 100 of each keyword to avoid following non-relevant users.
         print('\n{} Starting to like users who tweeted \'{}\''.format(datetime.now().strftime('%d-%m-%Y %H:%M:%S'),i))
-        for i in range(0, len(new_tweet_ids) - 1):
+        for x in range(0, len(searched_tweet_ids) - 1):
             # search to see if a tweet has already been liked and then ignore if it has.
             try:
-                # Don't like if the user is in Blacklisted users list
-                if searched_tweet_user_data[i]['user']['id'] in blacklisted_users:
-                	break
-                api.create_favorite(new_tweet_ids[i])
+                # Don't like if the user is in Blacklisted users list or already liked as a tweet or retweet
+                if searched_tweet_user_data[x]['user']['id'] in blacklisted_users:
+                    break
+                if searched_tweet_ids[x][0] in liked_tweet_retweet_ids_list:
+                    break
+                if searched_tweet_ids[x][1] in liked_tweet_retweet_ids_list:
+                    break
+
+                # Add tweet id's to liked_tweet_retweet_ids_list to make sure they are not liked more than once
+                liked_tweet_retweet_ids_list += [searched_tweet_ids[x][0],searched_tweet_ids[x][1]]
+
+                api.create_favorite(searched_tweet_ids[x][0])
                 # get user and tweet data for post analysis
-                tweet_id = new_tweet_ids[i]
-                tweet_date_time = searched_tweet_user_data[i]['created_at']
-                #searched_hashtag = i
-                liked_screen_name = searched_tweet_user_data[i]['user']['screen_name']
-                user_id = searched_tweet_user_data[i]['user']['id']
+                tweet_id = searched_tweet_ids[x][0]
+                original_tweet_id = searched_tweet_ids[x][1]
+                tweet_date_time = searched_tweet_user_data[x]['created_at']
+                searched_hashtag = i
+                liked_screen_name = searched_tweet_user_data[x]['user']['screen_name']
+                user_id = searched_tweet_user_data[x]['user']['id']
                 follows_me = liked_screen_name in followers
-                user_location = searched_tweet_user_data[i]['user']['location'].replace(',','')
-                followers_count = searched_tweet_user_data[i]['user']['followers_count']
-                friends_count = searched_tweet_user_data[i]['user']['friends_count']
-                favourites_count = searched_tweet_user_data[i]['user']['favourites_count']
-                statuses_count = searched_tweet_user_data[i]['user']['statuses_count']
-                tweet_likes = searched_tweet_user_data[i]['favorite_count']
-                tweet_text = ' '#searched_tweet_user_data[i]['text']
-                liked_tweet = ('{},{},{},{},{},{},{},{},{},{},{},{},{},{}'.format(
+                user_location = searched_tweet_user_data[x]['user']['location'].replace(',','')
+                followers_count = searched_tweet_user_data[x]['user']['followers_count']
+                friends_count = searched_tweet_user_data[x]['user']['friends_count']
+                favourites_count = searched_tweet_user_data[x]['user']['favourites_count']
+                statuses_count = searched_tweet_user_data[x]['user']['statuses_count']
+                tweet_likes = searched_tweet_user_data[x]['favorite_count']
+                tweet_text = ' '#searched_tweet_user_data[x]['text']
+                liked_tweet = ('{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}'.format(
                     tweet_id,
+                    original_tweet_id,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     tweet_date_time,
                     searched_hashtag,
@@ -590,7 +601,7 @@ def fav_off_keyword(followers, following, total_followed, whitelisted_users, bla
                 print('Liked tweet by {}. Sleeping 12 seconds.'.format(liked_screen_name))
                 sleep(12)
             except (tweepy.RateLimitError, tweepy.TweepError) as e:
-                print(new_tweet_ids[i])
+                print(searched_tweet_ids[x][0])
                 error_handling(e)
         with open('{}liked_tweets.csv'.format(log_location), 'a', encoding="utf-8") as liked_tweetsFile:
             for i in liked_tweets_list:
@@ -640,8 +651,8 @@ def send_dm(followers, following, total_followed, whitelisted_users, blacklisted
 
     shuffle(followers_to_message_list)
     messages = config_data[screen_name]["messages"]
-    greetings = ['Hey', 'Hi', 'Hello']
-    signoff = ['Cheers\nTeam Chirp']
+    greetings = config_data[screen_name]["greetings"]
+    signoff = config_data[screen_name]["signoff"]
     # tries sending a message to your followers. switches greeting and message.
     print('{} Starting to send messages to new {} followers... '.format(datetime.now().strftime('%d-%m-%Y %H:%M:%S'),screen_name))
     for user, message, greeting, signoff in zip(followers_to_message_list, cycle(messages), cycle(greetings), cycle(signoff)):
