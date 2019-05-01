@@ -1,6 +1,6 @@
 # TwitBot
 
-This is a Twitter bot that allows you to do automate a variety of tasks and generate logs of everything that is done! Schedule specific functions to run one by one using auto.py.
+A Python Twitter bot that allows you to do automate a variety of tasks (likes, follows, unfollows etc) and records of all interactions! Schedule specific functions to run one by one using auto.py.
 
 Specific functions can be run:
 1. Create a record of your followers and record the date/time if they unfollow you
